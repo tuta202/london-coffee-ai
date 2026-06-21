@@ -1,17 +1,21 @@
-## AI Phân tích giá cà phê Robusta London
+# London Coffee AI
 
-MVP Streamlit để lấy bảng **Giá cà phê Robusta London (Luân Đôn)** từ Webgia, chuẩn hóa dữ liệu, tính các chỉ số định lượng cơ bản và gửi dữ liệu đã xử lý sang Gemini để tạo báo cáo tiếng Việt dễ hiểu.
+Ứng dụng Streamlit phân tích bảng **Giá cà phê Robusta London (Luân Đôn)** từ Webgia.
 
-### Tính năng
+Nguồn dữ liệu cố định:
 
-- Crawl dữ liệu từ `https://webgia.com/gia-hang-hoa/ca-phe-the-gioi/`
-- Chỉ parse bảng Robusta London, bỏ qua Arabica New York và các bảng khác
-- Chuẩn hóa số liệu: giá khớp, thay đổi, %, cao nhất, thấp nhất, khối lượng, mở cửa, hôm trước, HĐ mở
-- Tính tín hiệu giá so với hôm trước, trong phiên, biên độ dao động, vị trí giá trong vùng cao-thấp, thanh khoản
-- Tạo nhãn xu hướng định lượng trước khi gọi Gemini
-- Hiển thị bảng, biểu đồ và cảnh báo rủi ro trong Streamlit
+```text
+https://webgia.com/gia-hang-hoa/ca-phe-the-gioi/
+```
 
-### Chạy local
+## Tính năng
+
+- Lấy dữ liệu Webgia và chỉ đọc bảng Robusta London.
+- Chuẩn hóa dữ liệu giá, thay đổi %, khối lượng, mở cửa, hôm trước và HĐ mở.
+- Tính các chỉ số định lượng cơ bản theo từng kỳ hạn.
+- Hiển thị bảng dữ liệu, biểu đồ và báo cáo AI nếu có cấu hình `GEMINI_API_KEY`.
+
+## Chạy local
 
 ```powershell
 python -m venv .venv
@@ -21,21 +25,26 @@ Copy-Item .env.example .env
 streamlit run app.py
 ```
 
-Thêm `GEMINI_API_KEY` trong `.env` nếu muốn Gemini tạo báo cáo AI. Nếu chưa có key, app vẫn chạy phần crawl, bảng, biểu đồ và phân tích định lượng.
+Nếu chưa có `GEMINI_API_KEY`, app vẫn hiển thị bảng, biểu đồ và chỉ số định lượng.
 
-### Deploy Streamlit
+## Cấu hình
 
-Có thể triển khai bằng Streamlit Community Cloud:
-
-- Main file path: `app.py`
-- Python dependencies: `requirements.txt`
-- Secrets cần cấu hình nếu dùng Gemini:
+Tạo file `.env` từ `.env.example`:
 
 ```text
 GEMINI_API_KEY=your_api_key_here
 SOURCE_URL=https://webgia.com/gia-hang-hoa/ca-phe-the-gioi/
+GEMINI_MODEL=gemini-1.5-flash
 ```
 
-### Lưu ý
+## Deploy Streamlit
 
-Phân tích chỉ mang tính tham khảo, không phải khuyến nghị đầu tư hoặc giao dịch. Dự đoán AI có sai số vì chỉ dựa trên bảng giá hiện tại, chưa bao gồm tin tức, thời tiết, tồn kho, tỷ giá, chính sách và dữ liệu lịch sử dài hạn.
+Trên Streamlit Community Cloud:
+
+- Main file path: `app.py`
+- Dependencies: `requirements.txt`
+- Secrets: thêm `GEMINI_API_KEY` nếu muốn dùng báo cáo AI.
+
+## Lưu ý
+
+Phân tích chỉ mang tính tham khảo, không phải khuyến nghị đầu tư hoặc giao dịch.
