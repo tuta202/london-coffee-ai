@@ -1,6 +1,6 @@
-# London Coffee AI
+# AI Phân tích thị trường cà phê
 
-Ứng dụng Streamlit phân tích bảng **Giá cà phê Robusta London (Luân Đôn)** từ Webgia.
+Ứng dụng Streamlit phân tích giá cà phê Robusta London và file Excel shipment cà phê.
 
 Nguồn dữ liệu cố định:
 
@@ -14,6 +14,7 @@ https://webgia.com/gia-hang-hoa/ca-phe-the-gioi/
 - Chuẩn hóa dữ liệu giá, thay đổi %, khối lượng, mở cửa, hôm trước và HĐ mở.
 - Tính các chỉ số định lượng cơ bản theo từng kỳ hạn.
 - Hiển thị bảng dữ liệu, biểu đồ và báo cáo AI nếu có cấu hình `GEMINI_API_KEY`.
+- Upload file `.xlsx` có cấu trúc shipment cố định để phân tích volume, value, unit value, HS code, destination, importer/exporter và outlier.
 
 ## Chạy local
 
@@ -34,7 +35,7 @@ Tạo file `.env` từ `.env.example`:
 ```text
 GEMINI_API_KEY=your_api_key_here
 SOURCE_URL=https://webgia.com/gia-hang-hoa/ca-phe-the-gioi/
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
 ## Deploy Streamlit

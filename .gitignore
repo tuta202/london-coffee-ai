@@ -35,6 +35,9 @@ ENV/
 secrets.toml
 .streamlit/secrets.toml
 
+# Local/user-uploaded data
+data/
+
 # Streamlit
 .streamlit/config.toml
 
