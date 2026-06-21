@@ -75,7 +75,7 @@ if st.button("Phân tích ngay", type="primary"):
             df, scraped_at = load_market_data(SOURCE_URL)
             status.write("Đang xử lý dữ liệu...")
             market_analysis = analyze_market(df)
-            status.write("Đang gọi Gemini để phân tích...")
+            status.write("Đang gọi AI để phân tích...")
             prompt = build_gemini_prompt(df, market_analysis)
             ai_report = generate_report(prompt)
             status.update(label="Hoàn tất phân tích", state="complete")
