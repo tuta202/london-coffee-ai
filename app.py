@@ -69,8 +69,12 @@ def render_charts(df: pd.DataFrame) -> None:
 st.title("AI Phân tích giá cà phê Robusta London")
 st.caption("Nguồn dữ liệu: Webgia.")
 
-if st.button("Phân tích ngay", type="primary"):
+analyze_button = st.empty()
+analyze_clicked = analyze_button.button("Phân tích ngay", type="primary", key="analyze_now")
+
+if analyze_clicked:
     try:
+        analyze_button.button("Đang phân tích...", type="primary", disabled=True, key="analyzing")
         with st.status("Đang lấy dữ liệu từ Webgia...", expanded=True) as status:
             df, scraped_at = load_market_data(SOURCE_URL)
             status.write("Đang xử lý dữ liệu...")
@@ -106,5 +110,7 @@ if st.button("Phân tích ngay", type="primary"):
         )
     except Exception as exc:
         st.error(f"Không thể phân tích dữ liệu: {exc}")
+    finally:
+        analyze_button.button("Phân tích ngay", type="primary", disabled=False, key="analyze_again")
 else:
     st.write("Bấm **Phân tích ngay** để lấy dữ liệu mới nhất và tạo báo cáo.")
