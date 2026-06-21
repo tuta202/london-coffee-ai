@@ -80,14 +80,14 @@ def render_trade_analysis_table(title: str, df: pd.DataFrame) -> None:
     st.dataframe(format_numeric_table(df), use_container_width=True, hide_index=True)
 
 
-def render_trade_charts(annual_filtered: pd.DataFrame, monthly: pd.DataFrame) -> None:
+def render_trade_charts(annual: pd.DataFrame, monthly: pd.DataFrame) -> None:
     chart_cols = st.columns(2)
     chart_cols[0].plotly_chart(
         px.bar(
-            annual_filtered,
+            annual,
             x="year",
             y="volume_ton",
-            title="Volume theo năm sau lọc outlier",
+            title="Volume theo năm",
             labels={"year": "Năm", "volume_ton": "Tấn"},
         ),
         use_container_width=True,
@@ -203,12 +203,8 @@ with excel_tab:
                 for warning in analysis.warnings:
                     st.warning(warning)
 
-                render_trade_charts(analysis.annual_filtered, analysis.monthly)
+                render_trade_charts(analysis.annual_raw, analysis.monthly)
                 render_trade_analysis_table("Tăng trưởng năm - dữ liệu raw", analysis.annual_raw)
-                render_trade_analysis_table(
-                    "Tăng trưởng năm - sau lọc outlier unit value",
-                    analysis.annual_filtered,
-                )
                 render_trade_analysis_table("15 tháng gần nhất", analysis.monthly)
                 render_trade_analysis_table("Theo HS code", analysis.hs_summary)
                 render_trade_analysis_table("HS code theo năm", analysis.hs_year)
@@ -223,7 +219,7 @@ with excel_tab:
                     render_trade_analysis_table("Top cảng đến", analysis.top_destination_ports)
 
                 if not analysis.outliers.empty:
-                    st.subheader("Outlier cần kiểm tra")
+                    st.subheader("Điểm dữ liệu cần rà soát")
                     outlier_columns = [
                         "date",
                         "Importer",

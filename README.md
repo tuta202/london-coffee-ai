@@ -5,7 +5,7 @@ A Streamlit app for analyzing Robusta London coffee prices and coffee import/exp
 ## Main Features
 
 - **Robusta London price analysis**: fetches Webgia data, parses the Robusta London table, normalizes prices, calculates market metrics, and generates an AI report.
-- **Coffee import/export Excel analysis**: uploads one shipment `.xlsx` file, validates the required structure, analyzes volume/value/unit value/HS/outliers, and generates an AI report from aggregated data.
+- **Coffee import/export Excel analysis**: uploads one shipment `.xlsx` file, validates the required structure, analyzes volume/value/unit value/HS and data points that need review, then generates an AI report from aggregated data.
 
 ## Processing Workflow
 
@@ -29,7 +29,7 @@ flowchart TD
     A["User uploads one shipment .xlsx file"] --> B["Validate required columns"]
     B --> C["Read data in memory/session"]
     C --> D["Normalize date, volume, value, and unit value"]
-    D --> E["Calculate trade growth, HS, partners, destinations, and outliers"]
+    D --> E["Calculate trade growth, HS, partners, destinations, and review flags"]
     E --> F["Build aggregate AI payload, without sending the raw file"]
     F --> G["AI writes analysis report"]
     G --> H["Display summary, tables, charts, and AI report"]
@@ -64,4 +64,3 @@ For Streamlit Community Cloud:
 - Main file path: `app.py`
 - Dependencies: `requirements.txt`
 - Secrets: add `GEMINI_API_KEY` if AI reports are required.
-

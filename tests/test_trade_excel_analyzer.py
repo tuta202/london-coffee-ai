@@ -73,7 +73,6 @@ def test_analyze_trade_excel_returns_growth_tables():
     analysis = analyze_trade_excel(sample_trade_df())
 
     assert not analysis.annual_raw.empty
-    assert not analysis.annual_filtered.empty
     assert "volume_ton_growth_%" in analysis.annual_raw.columns
     assert analysis.hs_summary.iloc[0]["HS"] == 9011130
 
@@ -85,6 +84,7 @@ def test_build_trade_ai_prompt_uses_aggregate_payload_only():
     assert "Payload aggregate" in prompt
     assert "Chỉ sử dụng dữ liệu aggregate" in prompt
     assert "computed_key_metrics" in prompt
+    assert "review_flag_sample" in prompt
     assert "top_origin_ports" not in prompt
     assert "Buyer A" in prompt
     assert "ROBUSTA COFFEE BEANS" not in prompt

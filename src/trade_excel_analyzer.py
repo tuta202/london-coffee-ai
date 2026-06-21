@@ -31,7 +31,6 @@ UNIT_VALUE_MAX = 30000
 class TradeAnalysis:
     clean_data: pd.DataFrame
     annual_raw: pd.DataFrame
-    annual_filtered: pd.DataFrame
     monthly: pd.DataFrame
     hs_year: pd.DataFrame
     hs_summary: pd.DataFrame
@@ -220,14 +219,12 @@ def first_compact_record(df: pd.DataFrame, columns: list[str]) -> dict | None:
 
 def build_key_metrics(analysis: TradeAnalysis) -> dict:
     raw_growth = summarize_latest_growth(analysis.annual_raw)
-    filtered_growth = summarize_latest_growth(analysis.annual_filtered)
     top_columns = ["shipments", "volume_ton", "value", "unit_value_per_ton"]
     return {
         "valid_rows": len(analysis.clean_data),
         "date_min": str(analysis.clean_data["date"].min().date()),
         "date_max": str(analysis.clean_data["date"].max().date()),
         "raw_latest_vs_previous": raw_growth,
-        "filtered_latest_vs_previous": filtered_growth,
         "top_hs_by_volume": first_compact_record(
             analysis.hs_summary,
             ["HS", "volume_ton", "value", "unit_value_per_ton", "volume_share_%"],
@@ -244,10 +241,10 @@ def build_key_metrics(analysis: TradeAnalysis) -> dict:
             analysis.top_exporters,
             ["Exporter", *top_columns],
         ),
-        "outlier_count": int(
+        "review_flag_count": int(
             (~analysis.clean_data["unit_value_per_ton"].between(UNIT_VALUE_MIN, UNIT_VALUE_MAX)).sum()
         ),
-        "outlier_rule": f"unit_value_per_ton outside {UNIT_VALUE_MIN}-{UNIT_VALUE_MAX}",
+        "review_flag_rule": f"unit_value_per_ton outside {UNIT_VALUE_MIN}-{UNIT_VALUE_MAX}",
     }
 
 
@@ -262,12 +259,10 @@ def format_hs_code(value: object) -> str:
 def build_narrative(
     clean: pd.DataFrame,
     annual_raw: pd.DataFrame,
-    annual_filtered: pd.DataFrame,
     hs_summary: pd.DataFrame,
     warnings: list[str],
 ) -> str:
     raw_growth = summarize_latest_growth(annual_raw)
-    filtered_growth = summarize_latest_growth(annual_filtered)
     top_hs = hs_summary.iloc[0] if not hs_summary.empty else None
 
     lines = [
@@ -282,25 +277,17 @@ def build_narrative(
             f"trong {raw_growth['latest_year']} so với {raw_growth['previous_year']}."
         )
 
-    if filtered_growth:
-        lines.append(
-            "- Sau khi lọc outlier unit value ngoài khoảng "
-            f"{UNIT_VALUE_MIN:,}-{UNIT_VALUE_MAX:,}/tấn, volume tăng **{filtered_growth['volume_growth']:.1f}%**, "
-            f"value tăng **{filtered_growth['value_growth']:.1f}%**, unit value thay đổi **{filtered_growth['unit_growth']:.1f}%**."
-        )
-
     if top_hs is not None:
         hs_code = format_hs_code(top_hs["HS"])
         lines.append(
-            f"- HS **{hs_code}** là nhóm lớn nhất theo volume, chiếm "
-            f"**{top_hs['volume_share_%']:.1f}%** volume sau lọc outlier."
+            f"- HS **{hs_code}** là nhóm lớn nhất theo volume, chiếm **{top_hs['volume_share_%']:.1f}%** volume."
         )
 
     if warnings:
         lines.append("- Cần chú ý: " + " ".join(warnings))
 
     lines.append(
-        "- Kết luận: ưu tiên đọc tăng trưởng volume trước; tăng trưởng value cần kiểm tra outlier và đơn vị tiền tệ/giá trị."
+        "- Kết luận: báo cáo sử dụng toàn bộ dữ liệu hợp lệ trong file; các điểm bất thường chỉ được đánh dấu để rà soát, không bị loại khỏi phân tích chính."
     )
     return "\n".join(lines)
 
@@ -369,17 +356,17 @@ def build_trade_ai_prompt(analysis: TradeAnalysis) -> str:
             "date_min": str(analysis.clean_data["date"].min().date()),
             "date_max": str(analysis.clean_data["date"].max().date()),
             "warnings": analysis.warnings,
-            "outlier_rule": f"unit_value_per_ton outside {UNIT_VALUE_MIN}-{UNIT_VALUE_MAX}",
+            "review_flag_rule": f"unit_value_per_ton outside {UNIT_VALUE_MIN}-{UNIT_VALUE_MAX}",
+            "note": "Rows outside the review flag range are kept in the main analysis.",
         },
         "computed_key_metrics": build_key_metrics(analysis),
         "annual_raw": compact_records(analysis.annual_raw, annual_columns),
-        "annual_filtered": compact_records(analysis.annual_filtered, annual_columns),
         "monthly_last_12": compact_records(analysis.monthly.tail(12), monthly_columns),
         "hs_summary_top_5": compact_records(analysis.hs_summary, ["HS", *group_columns], limit=5),
         "top_destinations": compact_records(analysis.top_destinations, ["C/D", *top_columns], limit=5),
         "top_importers": compact_records(analysis.top_importers, ["Importer", *top_columns], limit=5),
         "top_exporters": compact_records(analysis.top_exporters, ["Exporter", *top_columns], limit=5),
-        "outlier_sample": dataframe_records(
+        "review_flag_sample": dataframe_records(
             analysis.outliers[
                 [
                     "date",
@@ -404,8 +391,8 @@ Yêu cầu quan trọng:
 - Chỉ sử dụng dữ liệu aggregate trong payload bên dưới. Không tự suy diễn từ dữ liệu ngoài.
 - Ưu tiên dùng `computed_key_metrics` cho các con số chính; các bảng còn lại chỉ dùng để bổ trợ.
 - Không bịa nguyên nhân thị trường. Nếu không thể suy ra từ số liệu, ghi rõ "chưa đủ dữ liệu để kết luận".
-- Không lặp lại toàn bộ bảng. Tập trung vào insight từ volume, value, unit value, HS code, destination/importer/exporter và outlier.
-- Phân biệt rõ dữ liệu raw và dữ liệu đã lọc outlier unit value.
+- Không lặp lại toàn bộ bảng. Tập trung vào insight từ volume, value, unit value, HS code, destination/importer/exporter và điểm cần rà soát.
+- Báo cáo sử dụng toàn bộ dữ liệu hợp lệ. Các dòng unit value bất thường chỉ là điểm cần rà soát, không phải dữ liệu bị loại.
 - Không tự tính lại số nếu `computed_key_metrics` đã có sẵn.
 - Báo cáo bằng tiếng Việt, súc tích, tối đa 700 từ.
 
@@ -416,7 +403,7 @@ Trả lời đúng cấu trúc:
 
 ## 2. Tăng trưởng volume và value
 - So sánh năm mới nhất với năm trước theo cùng kỳ.
-- Nêu khác biệt giữa raw và sau lọc outlier.
+- Phân tích dựa trên toàn bộ dữ liệu hợp lệ trong file.
 
 ## 3. Cơ cấu sản phẩm / HS
 - HS nào đóng góp chính vào volume/value.
@@ -426,9 +413,9 @@ Trả lời đúng cấu trúc:
 - Destination, importer, exporter nổi bật.
 - Chỉ nêu những gì payload chứng minh được.
 
-## 5. Outlier và chất lượng dữ liệu
-- Nhận xét outlier unit value.
-- Nêu tác động của outlier đến phân tích value.
+## 5. Điểm cần rà soát và chất lượng dữ liệu
+- Nhận xét các dòng unit value bất thường nếu có.
+- Không loại các dòng này khỏi kết luận, chỉ nêu rằng chúng có thể ảnh hưởng đến value và cần kiểm tra đơn vị/nguồn dữ liệu.
 
 ## 6. Kết luận cho người chuyên môn
 - 3-5 điểm nên theo dõi tiếp.
@@ -442,17 +429,9 @@ def analyze_trade_excel(df: pd.DataFrame) -> TradeAnalysis:
     clean = normalize_trade_data(df)
     comparable, comparable_note = comparable_period(clean)
     annual_raw = aggregate_by_year(comparable)
-
-    filtered = comparable[
-        comparable["unit_value_per_ton"].between(UNIT_VALUE_MIN, UNIT_VALUE_MAX)
-    ].copy()
-    if filtered.empty:
-        filtered = comparable.copy()
-
-    annual_filtered = aggregate_by_year(filtered)
     monthly = aggregate_by_month(comparable).tail(15)
-    hs_summary = aggregate_by_hs(filtered)
-    hs_year = aggregate_hs_year(filtered)
+    hs_summary = aggregate_by_hs(comparable)
+    hs_year = aggregate_hs_year(comparable)
     outliers = clean[
         ~clean["unit_value_per_ton"].between(UNIT_VALUE_MIN, UNIT_VALUE_MAX)
     ].sort_values("value", ascending=False)
@@ -461,22 +440,21 @@ def analyze_trade_excel(df: pd.DataFrame) -> TradeAnalysis:
     if len(outliers) > 0:
         warnings.append(
             f"Phát hiện {len(outliers):,} dòng có unit value ngoài khoảng "
-            f"{UNIT_VALUE_MIN:,}-{UNIT_VALUE_MAX:,}/tấn; nên xem như outlier để kiểm tra."
+            f"{UNIT_VALUE_MIN:,}-{UNIT_VALUE_MAX:,}/tấn; các dòng này vẫn được giữ trong phân tích chính nhưng nên rà soát."
         )
 
     return TradeAnalysis(
         clean_data=clean,
         annual_raw=annual_raw,
-        annual_filtered=annual_filtered,
         monthly=monthly,
         hs_year=hs_year,
         hs_summary=hs_summary,
-        top_destinations=top_by(filtered, "C/D"),
-        top_importers=top_by(filtered, "Importer"),
-        top_exporters=top_by(filtered, "Exporter"),
-        top_origin_ports=top_by(filtered, "P/O"),
-        top_destination_ports=top_by(filtered, "P/D"),
+        top_destinations=top_by(comparable, "C/D"),
+        top_importers=top_by(comparable, "Importer"),
+        top_exporters=top_by(comparable, "Exporter"),
+        top_origin_ports=top_by(comparable, "P/O"),
+        top_destination_ports=top_by(comparable, "P/D"),
         outliers=outliers.head(20),
-        narrative=build_narrative(clean, annual_raw, annual_filtered, hs_summary, warnings),
+        narrative=build_narrative(clean, annual_raw, hs_summary, warnings),
         warnings=warnings,
     )
