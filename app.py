@@ -69,18 +69,10 @@ def render_charts(df: pd.DataFrame) -> None:
 st.title("AI Phân tích giá cà phê Robusta London")
 st.caption("Nguồn dữ liệu: Webgia.")
 
-with st.sidebar:
-    st.header("Nguồn dữ liệu")
-    source_url = st.text_input("URL", SOURCE_URL)
-    st.info(
-        "Ứng dụng chỉ phân tích bảng Giá cà phê Robusta London (Luân Đôn), "
-        "không dùng các bảng Arabica New York hoặc BMF Brazil."
-    )
-
 if st.button("Phân tích ngay", type="primary"):
     try:
         with st.status("Đang lấy dữ liệu từ Webgia...", expanded=True) as status:
-            df, scraped_at = load_market_data(source_url)
+            df, scraped_at = load_market_data(SOURCE_URL)
             status.write("Đang xử lý dữ liệu...")
             market_analysis = analyze_market(df)
             status.write("Đang gọi Gemini để phân tích...")
@@ -90,7 +82,7 @@ if st.button("Phân tích ngay", type="primary"):
 
         st.subheader("Kết quả")
         st.write(f"Cập nhật lúc: **{scraped_at.strftime('%Y-%m-%d %H:%M:%S %Z')}**")
-        st.write(f"Nguồn: [{source_url}]({source_url})")
+        st.write(f"Nguồn: [{SOURCE_URL}]({SOURCE_URL})")
 
         st.subheader("Bảng dữ liệu chuẩn hóa")
         display_df = df.copy()
