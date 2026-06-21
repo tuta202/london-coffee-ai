@@ -1,22 +1,41 @@
-# AI Phân tích thị trường cà phê
+# Coffee Market AI Analyzer
 
-Ứng dụng Streamlit phân tích giá cà phê Robusta London và file Excel shipment cà phê.
+A Streamlit app for analyzing Robusta London coffee prices and coffee import/export shipment data from Excel files.
 
-Nguồn dữ liệu cố định:
+## Main Features
 
-```text
-https://webgia.com/gia-hang-hoa/ca-phe-the-gioi/
+- **Robusta London price analysis**: fetches Webgia data, parses the Robusta London table, normalizes prices, calculates market metrics, and generates an AI report.
+- **Coffee import/export Excel analysis**: uploads one shipment `.xlsx` file, validates the required structure, analyzes volume/value/unit value/HS/outliers, and generates an AI report from aggregated data.
+
+## Processing Workflow
+
+### 1. Robusta London Price Analysis
+
+```mermaid
+flowchart TD
+    A["User clicks Analyze Now"] --> B["Fetch data from Webgia"]
+    B --> C["Find the Robusta London table"]
+    C --> D["Decode and normalize data"]
+    D --> E["Calculate quantitative metrics"]
+    E --> F["Build AI payload"]
+    F --> G["AI writes analysis report"]
+    G --> H["Display table, charts, and report"]
 ```
 
-## Tính năng
+### 2. Import/Export Excel Analysis
 
-- Lấy dữ liệu Webgia và chỉ đọc bảng Robusta London.
-- Chuẩn hóa dữ liệu giá, thay đổi %, khối lượng, mở cửa, hôm trước và HĐ mở.
-- Tính các chỉ số định lượng cơ bản theo từng kỳ hạn.
-- Hiển thị bảng dữ liệu, biểu đồ và báo cáo AI nếu có cấu hình `GEMINI_API_KEY`.
-- Upload file `.xlsx` có cấu trúc shipment cố định để phân tích volume, value, unit value, HS code, destination, importer/exporter và outlier.
+```mermaid
+flowchart TD
+    A["User uploads one shipment .xlsx file"] --> B["Validate required columns"]
+    B --> C["Read data in memory/session"]
+    C --> D["Normalize date, volume, value, and unit value"]
+    D --> E["Calculate trade growth, HS, partners, destinations, and outliers"]
+    E --> F["Build aggregate AI payload, without sending the raw file"]
+    F --> G["AI writes analysis report"]
+    G --> H["Display summary, tables, charts, and AI report"]
+```
 
-## Chạy local
+## Run Locally
 
 ```powershell
 python -m venv .venv
@@ -26,11 +45,9 @@ Copy-Item .env.example .env
 streamlit run app.py
 ```
 
-Nếu chưa có `GEMINI_API_KEY`, app vẫn hiển thị bảng, biểu đồ và chỉ số định lượng.
+## Configuration
 
-## Cấu hình
-
-Tạo file `.env` từ `.env.example`:
+Create `.env` from `.env.example`:
 
 ```text
 GEMINI_API_KEY=your_api_key_here
@@ -38,14 +55,13 @@ SOURCE_URL=https://webgia.com/gia-hang-hoa/ca-phe-the-gioi/
 GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
-## Deploy Streamlit
+Without `GEMINI_API_KEY`, the app still shows the rule-based quantitative analysis.
 
-Trên Streamlit Community Cloud:
+## Streamlit Deployment
+
+For Streamlit Community Cloud:
 
 - Main file path: `app.py`
 - Dependencies: `requirements.txt`
-- Secrets: thêm `GEMINI_API_KEY` nếu muốn dùng báo cáo AI.
+- Secrets: add `GEMINI_API_KEY` if AI reports are required.
 
-## Lưu ý
-
-Phân tích chỉ mang tính tham khảo, không phải khuyến nghị đầu tư hoặc giao dịch.
